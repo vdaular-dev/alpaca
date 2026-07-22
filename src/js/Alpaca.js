@@ -493,7 +493,8 @@
          * @returns {Boolean} True if the variable is a function, false otherwise.
          */
         isFunction: function(obj) {
-            return Object.prototype.toString.call(obj) === "[object Function]";
+            //return Object.prototype.toString.call(obj) === "[object Function]";
+            return typeof obj === "function";
         },
 
         /**
@@ -511,7 +512,15 @@
          * @returns {Boolean} True if the variable is an object, false otherwise.
          */
         isObject: function(obj) {
-            return !Alpaca.isUndefined(obj) && Object.prototype.toString.call(obj) === '[object Object]';
+
+            // fast-reject primitives, null and undefined before the costlier tag check
+            if (obj === null || typeof obj !== "object") {
+                return false;
+            }
+
+            // still tag-check to exclude Array, Date, RegExp, DOM nodes, etc.
+            return Object.prototype.toString.call(obj) === "[object Object]";
+            //return !Alpaca.isUndefined(obj) && Object.prototype.toString.call(obj) === '[object Object]';
         },
 
         /**
@@ -538,7 +547,8 @@
          * @returns {Boolean} True if the variable is an array, false otherwise.
          */
         isArray: function(obj) {
-            return Object.prototype.toString.call(obj) == "[object Array]";
+            return Array.isArray(obj);
+            //return Object.prototype.toString.call(obj) == "[object Array]";
         },
 
         /**
@@ -556,7 +566,7 @@
          * @returns {Boolean} True if the variable is a undefined, false otherwise.
          */
         isUndefined: function(obj) {
-            return (typeof obj == "undefined");
+            return (typeof obj === "undefined");
         },
 
         /**
@@ -630,13 +640,28 @@
                 return true;
             }
 
-            if (obj && Alpaca.isObject(obj))
+            if (Alpaca.isObject(obj))
             {
-                var count = self.countProperties(obj, includeFunctions);
-                if (count === 0)
+                for (var k in obj)
                 {
-                    return true;
+                    if (obj.hasOwnProperty(k))
+                    {
+                        var z = obj[k];
+
+                        if (!includeFunctions && Alpaca.isFunction(z))
+                        {
+                            continue;
+                        }
+
+                        return false;
+                    }
                 }
+
+                return true;
+            }
+            else if (Alpaca.isArray(obj))
+            {
+                return (obj.length === 0);
             }
 
             return false;
